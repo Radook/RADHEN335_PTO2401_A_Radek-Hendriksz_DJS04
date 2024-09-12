@@ -3,18 +3,99 @@ import { books, authors, genres, BOOKS_PER_PAGE } from './data.js'
 let page = 1;
 let matches = books;
 
+class BookPreview extends HTMLElement {
+    static get observedAttributes() {
+        return ['bookdata']; // Observe changes to the bookData attribute
+    }
+
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.render();
+    }
+
+    // Set bookData when the attribute changes
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'bookdata') {
+            this.updateBookData(JSON.parse(newValue)); // Parse and update book data
+        }
+    }
+
+    set bookData(data) {
+        this.setAttribute('bookdata', JSON.stringify(data)); // Set attribute for book data
+    }
+
+    updateBookData({ author, id, image, title }) {
+        this.shadowRoot.querySelector('.preview__image').src = image;
+        this.shadowRoot.querySelector('.preview__title').innerText = title;
+        this.shadowRoot.querySelector('.preview__author').innerText = authors[author];
+        this.dataset.preview = id;
+    }
+
+    render() {
+        this.shadowRoot.innerHTML = `
+            <style>
+                .preview {
+                    width: 100%; /* Ensure the preview takes the full width */
+                    height: 100px; /* Set a fixed height for uniformity */
+                    display: flex; /* Use flexbox for layout */
+                    align-items: center;
+                    cursor: pointer;
+                    text-align: left;
+                    border-radius: 8px;
+                    border: 1px solid rgba(var(--color-dark), 0.15);
+                    background: rgba(var(--color-light), 1);
+                    margin: 0.5rem; /* Add margin for spacing between previews */
+                }
+                .preview__image {
+                    width: 48px;
+                    height: 70px;
+                    object-fit: cover;
+                    background: grey;
+                    border-radius: 2px;
+                }
+                .preview__info {
+                    padding: 1rem;
+                    flex-grow: 1; /* Allow info to take remaining space */
+                }
+                .preview__title {
+                    margin: 0 0 0.5rem;
+                    font-weight: bold;
+                    color: rgba(var(--color-dark), 0.8);
+                }
+                .preview__author {
+                    color: rgba(var(--color-dark), 0.4);
+                }
+            </style>
+            <div class="preview">
+                <img class="preview__image" src="" alt="Book Cover" />
+                <div class="preview__info">
+                    <h3 class="preview__title"></h3>
+                    <div class="preview__author"></div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+customElements.define('book-preview', BookPreview);
+
 // Function to create a button element for a book
-function createBookButton({ author, id, image, title }) {
-    const element = document.createElement('button');
-    element.classList = 'preview';
-    element.setAttribute('data-preview', id);
-    element.innerHTML = `
-        <img class="preview__image" src="${image}" />
-        <div class="preview__info">
-            <h3 class="preview__title">${title}</h3>
-            <div class="preview__author">${authors[author]}</div>
-        </div>
-    `;
+function createBookButton(book) {
+    const element = document.createElement('book-preview');
+    element.bookData = book; // Set the book data
+    element.addEventListener('click', () => {
+        // Handle click event to show book details
+        const bookDetails = books.find(singleBook => singleBook.id === book.id);
+        if (bookDetails) {
+            document.querySelector('[data-list-active]').open = true;
+            document.querySelector('[data-list-blur]').src = bookDetails.image;
+            document.querySelector('[data-list-image]').src = bookDetails.image;
+            document.querySelector('[data-list-title]').innerText = bookDetails.title;
+            document.querySelector('[data-list-subtitle]').innerText = `${authors[bookDetails.author]} (${new Date(bookDetails.published).getFullYear()})`;
+            document.querySelector('[data-list-description]').innerText = bookDetails.description;
+        }
+    });
     return element;
 }
 
