@@ -35,17 +35,33 @@ class BookPreview extends HTMLElement {
     render() {
         this.shadowRoot.innerHTML = `
             <style>
+                .preview-container {
+                    display: flex; 
+                    flex-wrap: wrap; 
+                    gap: 1rem; 
+                }
                 .preview {
-                    width: 100%; /* Ensure the preview takes the full width */
-                    height: 100px; /* Set a fixed height for uniformity */
-                    display: flex; /* Use flexbox for layout */
+                    border-width: 0;
+                    width: calc(100% - 1rem); /* Adjust width to account for gap */
+                    font-family: Roboto, sans-serif;
+                    padding: 0.5rem; /* Padding on all sides */
+                    display: flex;
                     align-items: center;
                     cursor: pointer;
                     text-align: left;
+                    font-size: 14px;
                     border-radius: 8px;
                     border: 1px solid rgba(var(--color-dark), 0.15);
                     background: rgba(var(--color-light), 1);
-                    margin: 0.5rem; /* Add margin for spacing between previews */
+                    height: 76px; /* Fixed height for uniformity */
+                }
+                @media (min-width: 60rem) {
+                    .preview {
+                        padding: 1rem;
+                    }
+                }
+                .preview:hover {
+                    background: rgba(var(--color-blue), 0.05);
                 }
                 .preview__image {
                     width: 48px;
@@ -53,25 +69,33 @@ class BookPreview extends HTMLElement {
                     object-fit: cover;
                     background: grey;
                     border-radius: 2px;
+                    box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                                0px 1px 1px 0px rgba(0, 0, 0, 0.1), 
+                                0px 1px 3px 0px rgba(0, 0, 0, 0.1);
                 }
                 .preview__info {
                     padding: 1rem;
-                    flex-grow: 1; /* Allow info to take remaining space */
                 }
                 .preview__title {
                     margin: 0 0 0.5rem;
                     font-weight: bold;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;  
+                    overflow: hidden;
                     color: rgba(var(--color-dark), 0.8);
                 }
                 .preview__author {
                     color: rgba(var(--color-dark), 0.4);
                 }
             </style>
-            <div class="preview">
-                <img class="preview__image" src="" alt="Book Cover" />
-                <div class="preview__info">
-                    <h3 class="preview__title"></h3>
-                    <div class="preview__author"></div>
+            <div class="preview-container">
+                <div class="preview">
+                    <img class="preview__image" src="" alt="Book Cover" />
+                    <div class="preview__info">
+                        <h3 class="preview__title"></h3>
+                        <div class="preview__author"></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -83,9 +107,8 @@ customElements.define('book-preview', BookPreview);
 // Function to create a button element for a book
 function createBookButton(book) {
     const element = document.createElement('book-preview');
-    element.bookData = book; // Set the book data
+    element.bookData = book; 
     element.addEventListener('click', () => {
-        // Handle click event to show book details
         const bookDetails = books.find(singleBook => singleBook.id === book.id);
         if (bookDetails) {
             document.querySelector('[data-list-active]').open = true;
@@ -99,7 +122,6 @@ function createBookButton(book) {
     return element;
 }
 
-// Function to render book previews
 function renderBookPreviews(bookList) {
     const fragment = document.createDocumentFragment();
     for (const book of bookList.slice(0, BOOKS_PER_PAGE)) {
@@ -108,7 +130,6 @@ function renderBookPreviews(bookList) {
     document.querySelector('[data-list-items]').appendChild(fragment);
 }
 
-// Function to create genre options
 function createGenreOptions() {
     const genreHtml = document.createDocumentFragment();
     const firstGenreElement = document.createElement('option');
@@ -125,7 +146,6 @@ function createGenreOptions() {
     document.querySelector('[data-search-genres]').appendChild(genreHtml);
 }
 
-// Function to create author options
 function createAuthorOptions() {
     const authorsHtml = document.createDocumentFragment();
     const firstAuthorElement = document.createElement('option');
@@ -257,3 +277,61 @@ document.querySelector('[data-list-items]').addEventListener('click', (event) =>
         }
     }
 });
+
+class GenreSelector extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.render();
+    }
+
+    render() {
+        const genreHtml = document.createDocumentFragment();
+        const firstGenreElement = document.createElement('option');
+        firstGenreElement.value = 'any';
+        firstGenreElement.innerText = 'All Genres';
+        genreHtml.appendChild(firstGenreElement);
+
+        for (const [id, name] of Object.entries(genres)) {
+            const element = document.createElement('option');
+            element.value = id;
+            element.innerText = name;
+            genreHtml.appendChild(element);
+        }
+
+        const select = document.createElement('select');
+        select.appendChild(genreHtml);
+        this.shadowRoot.appendChild(select);
+    }
+}
+
+customElements.define('genre-selector', GenreSelector);
+
+class AuthorSelector extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.render();
+    }
+
+    render() {
+        const authorsHtml = document.createDocumentFragment();
+        const firstAuthorElement = document.createElement('option');
+        firstAuthorElement.value = 'any';
+        firstAuthorElement.innerText = 'All Authors';
+        authorsHtml.appendChild(firstAuthorElement);
+
+        for (const [id, name] of Object.entries(authors)) {
+            const element = document.createElement('option');
+            element.value = id;
+            element.innerText = name;
+            authorsHtml.appendChild(element);
+        }
+
+        const select = document.createElement('select');
+        select.appendChild(authorsHtml);
+        this.shadowRoot.appendChild(select);
+    }
+}
+
+customElements.define('author-selector', AuthorSelector);
